@@ -6,8 +6,9 @@ import (
 	"log"
 	"os"
 	"strings"
-	"golang.org/x/net/websocket"
+
 	"./db"
+	"golang.org/x/net/websocket"
 )
 
 var dbFile string
@@ -39,7 +40,7 @@ func main() {
 
 func setup() {
 	// connect DB
-	flag.StringVar(&dbFile, "db", "/tmp/panda.db", "Path to the BoltDB file")
+	flag.StringVar(&dbFile, "db", ".\\tmp\\panda.db", "Path to the BoltDB file")
 	flag.Parse()
 
 	// Setup the logger
