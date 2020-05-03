@@ -7,12 +7,12 @@ type Tx struct {
 	*bolt.Tx
 }
 
-// Vacation retrieves a Vacation from the database with the given name.
-func (tx *Tx) Vacation(name []byte) (*Vacation, error) {
-	v := &Vacation{
+// Vacation retrieves a Vacation from the database with the given userId.
+func (tx *Tx) Vacation(userId []byte) (*Vacation, error) {
+	vacation := &Vacation{
 		Tx: tx,
-		Id: name,
+		UserId: userId,
 	}
 
-	return v, v.Load()
+	return vacation, vacation.Load()
 }

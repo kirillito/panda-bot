@@ -11,10 +11,26 @@ import (
 	"strings"
 )
 
-func pandaRead(id string, m Message) Message {
+func pandaAnswerMessage(id string, m Message) Message {
 	m.Text = pandaAnswer(strings.TrimPrefix(m.Text, "<@"+id+">"))
 
 	return m
+}
+
+func save() {
+	/*	s.db.Update(func(tx *db.Tx) error {
+		r.ParseForm()
+
+		v := db.Vacation{
+			Tx:   tx,
+			Id: s.getPageName(r),
+		}
+
+		v.Data = []byte(strings.TrimSpace(r.FormValue("text")))
+
+		return v.Save()
+	})*/
+
 }
 
 var history []string
