@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"./db"
-	"golang.org/x/net/websocket"
+	"./panda"
 )
 
 var dbFile string
@@ -29,16 +28,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	setup()
+	db, logger := setup()
 
-	// start a websocket-based Real Time API session
-	ws, id := slackConnect(os.Args[1])
-	fmt.Println("panda-bot ready, ^C exits")
-
-	runBot(ws, id)
+	bot := panda.Create(logger, db)
+	bot.Run(os.Args[1])
 }
 
-func setup() {
+func setup() (*db.DB, *log.Logger) {
 	// connect DB
 	flag.StringVar(&dbFile, "db", ".\\tmp\\panda.db", "Path to the BoltDB file")
 	flag.Parse()
@@ -52,26 +48,6 @@ func setup() {
 		logger.Fatal(err)
 	}
 	defer db.Close()
-}
 
-func runBot(ws *websocket.Conn, id string) {
-	for {
-		// read each incoming message
-		m, err := getMessage(ws)
-		if err != nil {
-			log.Fatal(err)
-		}
-		// see if we're mentioned
-		if m.Type == "message" && strings.HasPrefix(m.Text, "<@"+id+">") {
-			// if so try to parse if
-			//parts := strings.Fields(m.Text)
-			// looks good, get the quote and reply with the result
-			go func(m Message) {
-				m = pandaAnswerMessage(id, m)
-				postMessage(ws, m)
-			}(m)
-			// NOTE: the Message object is copied, this is intentional
-		}
-
-	}
+	return db, logger
 }
