@@ -12,8 +12,12 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# TMP db
+tmp/*
+
 # VS Code settings
 .vscode/*
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+__debug_bin

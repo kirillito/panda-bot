@@ -22,18 +22,6 @@ func newDB(fn string) (*db.DB, error) {
 	return db, nil
 }
 
-func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "usage: panda-bot slack-bot-token\n")
-		os.Exit(1)
-	}
-
-	db, logger := setup()
-
-	bot := panda.Create(logger, db)
-	bot.Run(os.Args[1])
-}
-
 func setup() (*db.DB, *log.Logger) {
 	// connect DB
 	flag.StringVar(&dbFile, "db", ".\\tmp\\panda.db", "Path to the BoltDB file")
@@ -47,7 +35,19 @@ func setup() (*db.DB, *log.Logger) {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	defer db.Close()
 
 	return db, logger
+}
+
+func main() {
+	if len(os.Args) != 2 {
+		fmt.Fprintf(os.Stderr, "usage: panda-bot slack-bot-token\n")
+		os.Exit(1)
+	}
+
+	db, logger := setup()
+	defer db.Close()
+
+	bot := panda.Create(logger, db)
+	bot.Run(os.Args[1])
 }

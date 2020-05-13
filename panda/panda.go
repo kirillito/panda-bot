@@ -22,11 +22,12 @@ import (
 type MessageType int
 
 const (
-	Unsupported        MessageType = 0
-	VacationSetSelf    MessageType = 1
-	VacationSetMention MessageType = 2
-	VacationGetList    MessageType = 5
-	UserMention        MessageType = 10
+	Unsupported               MessageType = 0
+	VacationSetSelf           MessageType = 1
+	VacationSetMention        MessageType = 2
+	VacationGetListForMention MessageType = 5
+	VacationGetListAll        MessageType = 6
+	UserMention               MessageType = 10
 )
 
 type PandaBot struct {
@@ -74,16 +75,44 @@ func (bot *PandaBot) pandaAnswerMessage(id string, m Message) (Message, bool) {
 	case VacationSetSelf:
 		dateFrom, dateTo, err := getDateRangeFromString(m.Text)
 		if err == nil {
-			bot.saveVacation(m.User, "vacation", dateFrom, dateTo)
-			m.Text = "Got it!"
+			err = bot.saveVacation(m.User, "vacation", dateFrom, dateTo)
+
+			if err != nil {
+				m.Text = fmt.Sprint("Error: ", err)
+			} else {
+				m.Text = "Got it!"
+			}
+
 			doAnswer = true
 		}
 	case VacationSetMention:
-		doAnswer = true
-	case VacationGetList:
-		lst := bot.listVacations(m.User)
-		m.Text = "Here's the list of vacations: " + lst
-		doAnswer = true
+		dateFrom, dateTo, err := getDateRangeFromString(m.Text)
+		userIdMentioned, err := getMentionedUserId(m.Text)
+		if err == nil {
+			err = bot.saveVacation(userIdMentioned, "vacation", dateFrom, dateTo)
+
+			if err != nil {
+				m.Text = fmt.Sprint("Error: ", err)
+			} else {
+				m.Text = "Got it!"
+			}
+
+			doAnswer = true
+		}
+	case VacationGetListForMention:
+		userIdMentioned, err := getMentionedUserId(m.Text)
+		if err == nil {
+			lst, err := bot.listVacations(userIdMentioned)
+
+			if err != nil {
+				m.Text = fmt.Sprint("Error: ", err)
+			} else {
+				m.Text = "Here's the list of vacations: " + lst
+			}
+			doAnswer = true
+		}
+	case VacationGetListAll:
+
 	default:
 	}
 
@@ -93,8 +122,8 @@ func (bot *PandaBot) pandaAnswerMessage(id string, m Message) (Message, bool) {
 	return m, doAnswer
 }
 
-func (bot *PandaBot) saveVacation(userId string, vacationType string, dateStart time.Time, dateEnd time.Time) {
-	bot.db.Update(func(tx *db.Tx) error {
+func (bot *PandaBot) saveVacation(userId string, vacationType string, dateStart time.Time, dateEnd time.Time) error {
+	err := bot.db.Update(func(tx *db.Tx) error {
 		v := db.Vacation{
 			Tx:        tx,
 			UserId:    []byte(userId),
@@ -106,26 +135,23 @@ func (bot *PandaBot) saveVacation(userId string, vacationType string, dateStart 
 		return v.Save()
 	})
 
-	return
+	return err
 }
 
-func (bot *PandaBot) listVacations(userId string) string {
-	var v = db.Vacation{
-		UserId: []byte(userId),
-	}
-	//var err error
+func (bot *PandaBot) listVacations(userId string) (string, error) {
+	var v *db.Vacation
+	var err error
 
 	bot.db.View(func(tx *db.Tx) error {
-		v.Load()
-
-		return nil
+		v, err = tx.Vacation([]byte(userId))
+		return err
 	})
 
 	// if v == nil {
 	// 	return "No vacations found"
 	// }
 
-	return string(v.UserId) + " is on vacation from " + time.Time.String(v.DateStart) + " to " + time.Time.String(v.DateEnd)
+	return fmt.Sprintf("<@%s> is on vacation from %s to %s :panda-roll:", v.UserId, v.DateStart.Format("2006-01-02"), v.DateEnd.Format("2006-01-02")), err
 }
 
 func (bot *PandaBot) getMessageType(id string, m Message) MessageType {
@@ -139,8 +165,10 @@ func (bot *PandaBot) getMessageType(id string, m Message) MessageType {
 				} else {
 					return VacationSetMention
 				}
-			} else if strings.Contains(m.Text, "vacation list") {
-				return VacationGetList
+			} else if strings.Contains(m.Text, "list vacations for") {
+				return VacationGetListForMention
+			} else if strings.Contains(m.Text, "list all vacations") {
+				return VacationGetListAll
 			}
 		}
 	}
@@ -192,4 +220,16 @@ func getDateRangeFromString(str string) (time.Time, time.Time, error) {
 	}
 
 	return date1, date2, nil
+}
+
+func getMentionedUserId(str string) (string, error) {
+	re := regexp.MustCompile(`<@([WU].+?)>`)
+
+	mentions := re.FindAllString(str, -1)
+
+	if len(mentions) < 2 {
+		return "", errors.New("no user mention found")
+	}
+
+	return mentions[1][2 : len(mentions[1])-1], nil
 }

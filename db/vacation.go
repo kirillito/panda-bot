@@ -27,7 +27,8 @@ func (vacation *Vacation) bucket() []byte {
 }
 
 func (vacation *Vacation) get() ([]byte, error) {
-	data := vacation.Tx.Bucket(vacation.bucket()).Get(vacation.UserId)
+	bucket := vacation.Tx.Bucket(vacation.bucket())
+	data := bucket.Get(vacation.UserId)
 	if data == nil {
 		return nil, ErrVacationNotFound
 	}
