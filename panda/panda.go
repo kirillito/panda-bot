@@ -28,7 +28,8 @@ const (
 	VacationGetListForMention MessageType = 5
 	VacationGetListAll        MessageType = 6
 	UserMention               MessageType = 10
-	Goodnight                 MessageType = 100
+	Goodmorning               MessageType = 100
+	Goodnight                 MessageType = 101
 )
 
 type PandaBot struct {
@@ -113,6 +114,9 @@ func (bot *PandaBot) pandaAnswerMessage(id string, m Message) (Message, bool) {
 			doAnswer = true
 		}
 	case VacationGetListAll:
+	case Goodmorning:
+		m.Text = fmt.Sprintf("Good morning, <@%s>", m.User)
+		doAnswer = true
 	case Goodnight:
 		m.Text = fmt.Sprintf("Goodnight, <@%s>", m.User)
 		doAnswer = true
@@ -172,6 +176,8 @@ func (bot *PandaBot) getMessageType(id string, m Message) MessageType {
 				return VacationGetListForMention
 			} else if strings.Contains(m.Text, "list all vacations") {
 				return VacationGetListAll
+			} else if strings.Contains(strings.ToLower(m.Text), "good morning") {
+				return Goodmorning
 			} else if strings.Contains(strings.ToLower(m.Text), "goodnight") {
 				return Goodnight
 			}
