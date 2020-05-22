@@ -30,6 +30,7 @@ const (
 	UserMention               MessageType = 10
 	Goodmorning               MessageType = 100
 	Goodnight                 MessageType = 101
+	Thanks                    MessageType = 102
 )
 
 type PandaBot struct {
@@ -120,6 +121,9 @@ func (bot *PandaBot) pandaAnswerMessage(id string, m Message) (Message, bool) {
 	case Goodnight:
 		m.Text = fmt.Sprintf("Goodnight, <@%s>", m.User)
 		doAnswer = true
+	case Thanks:
+		m.Text = fmt.Sprintf("You are most welcome, <@%s>!", m.User)
+		doAnswer = true
 	default:
 	}
 
@@ -180,6 +184,8 @@ func (bot *PandaBot) getMessageType(id string, m Message) MessageType {
 				return Goodmorning
 			} else if strings.Contains(strings.ToLower(m.Text), "goodnight") {
 				return Goodnight
+			} else if strings.Contains(strings.ToLower(m.Text), "thanks") {
+				return Thanks
 			}
 		}
 	}
